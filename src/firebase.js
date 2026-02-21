@@ -16,12 +16,13 @@ import {
 // ║  PASTE YOUR FIREBASE CONFIG BELOW         ║
 // ╚═══════════════════════════════════════════╝
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyAK0N981URXz0ozmTYgS67sYtdv5oVZySA",
+  authDomain: "mumsa-1c667.firebaseapp.com",
+  projectId: "mumsa-1c667",
+  storageBucket: "mumsa-1c667.firebasestorage.app",
+  messagingSenderId: "734190082524",
+  appId: "1:734190082524:web:c3d5fa0ea87d4d26d31719",
+  measurementId: "G-GDJ10JL63M" // Your Analytics Measurement ID
 };
 // ╔═══════════════════════════════════════════╗
 // ║  DO NOT EDIT BELOW THIS LINE              ║
