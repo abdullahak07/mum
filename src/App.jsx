@@ -6,7 +6,7 @@ import {
 import logo from "./logo.png";
 
 /* ═══ LINKS ═══ */
-const LOGO =logo;
+const LOGO = logo;
 const WHATSAPP = "https://chat.whatsapp.com/LnsJ6ZJH5AoFCuJV1hbcE8";
 const FB = "https://www.facebook.com/MurdochUniMSA/";
 const YT = "https://youtube.com/@murdoch-2025";
@@ -500,6 +500,8 @@ function UserApp({ now, regs, setRegs, cfg, scr, strikes }) {
                 return (
               <div style={{ maxWidth: "520px", margin: "0 auto" }}><button onClick={() => setViewQR(null)} style={{ ...BTN("out"), marginBottom: "14px", padding: "10px", fontSize: "12px" }}>← Back</button><div className="card" style={{ border: `1px solid ${qs.color === "green" ? P.ok + "40" : qs.color === "red" ? P.err + "40" : P.acc + "40"}`, textAlign: "center", padding: "32px" }}><div style={LBL}>Your Iftar Pass</div><div style={{ fontSize: "20px", fontWeight: "800", color: P.pri, margin: "8px 0 4px", fontFamily: "'Playfair Display'" }}>{viewQR.name}</div><div style={{ fontSize: "12px", color: P.acc, fontWeight: "600", marginBottom: "16px" }}>For: {viewQR.iftarDate || viewQR.date}</div>
                 {isActiveToday ? (<><div style={{ display: "inline-block", padding: "16px", background: "#fff", borderRadius: "16px", border: `2px solid ${P.ok}40` }}><QRCode value={viewQR.id} size={sm ? 240 : 200} /></div><div style={{ marginTop: "14px", fontSize: "13px", color: P.ok, background: "#dcfce7", padding: "14px", borderRadius: "10px", lineHeight: 1.5, fontWeight: "600" }}>✅ Active — Show this QR at the Iftar venue today</div></>) : (<><div style={{ padding: "40px 20px", background: P.bg, borderRadius: "16px", border: `2px dashed ${P.bor}` }}><div style={{ fontSize: "48px", marginBottom: "8px", opacity: 0.4 }}>{qs.color === "red" ? "❌" : "⏳"}</div><div style={{ fontSize: "16px", fontWeight: "700", color: P.sub }}>{viewQR.used ? "Already Used" : qs.label === "Upcoming" ? "Not Active Yet" : "Expired"}</div><div style={{ fontSize: "12px", color: P.mut, marginTop: "6px" }}>{viewQR.used ? "This pass was already scanned." : qs.label === "Upcoming" ? `This pass activates on ${viewQR.iftarDate}.` : "This pass has expired."}</div></div></>)}
+                {/* Cancel button — available if not used, registered today, before regEndHour */}
+                {!viewQR.used && viewQR.date === now.toDateString() && now.getHours() < cfg.regEndHour && (<div style={{ marginTop: "16px" }}><ConfirmBtn id={`cancel-${viewQR.id}`} label="❌ Cancel Registration" confirmLabel="Yes, Cancel!" onConfirm={() => { setRegs(regs.filter(r => r.id !== viewQR.id)); setViewQR(null); showToast("Registration cancelled. You won't receive a strike for this.", "ok"); }} style={{ width: "100%", padding: "14px", borderRadius: "12px", border: `2px solid ${P.err}30`, background: "#fef2f2", color: P.err, fontWeight: "700", fontSize: "14px", cursor: "pointer" }} /><div style={{ fontSize: "11px", color: P.mut, marginTop: "8px", textAlign: "center" }}>Cancel before {fH(cfg.regEndHour)} to avoid a no-show strike</div></div>)}
                 <div style={{ marginTop: "12px", display: "flex", justifyContent: "center", gap: "8px" }}><span style={BDG(qs.color)}>{qs.label}</span><span style={BDG("gold")}>{viewQR.type}</span></div></div></div>
                 );
               })()
