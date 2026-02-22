@@ -130,6 +130,15 @@ const P = {
 const PRAYER_ORDER = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
 /* Local date key — avoids UTC timezone bug (toISOString returns UTC, not Perth) */
 const localDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+/* Get iftar date key from registration — handles old data without iftarDateKey */
+const getIftarKey = (r) => {
+  if (r.iftarDateKey) return r.iftarDateKey;
+  // Fallback: parse "Sunday, February 22" or similar from iftarDate
+  if (r.iftarDate) { const d = new Date(r.iftarDate + ", " + new Date().getFullYear()); if (!isNaN(d)) return localDateKey(d); }
+  // Last resort: registration date = iftar was next day
+  if (r.date) { const d = new Date(r.date); d.setDate(d.getDate() + 1); return localDateKey(d); }
+  return "";
+};
 /* Strike system: no-show penalties */
 const STRIKE_RULES = [
   { strikes: 1, action: "⚠️ Warning", blockDays: 0 },
@@ -394,9 +403,10 @@ function UserApp({ now, regs, setRegs, cfg, scr, strikes }) {
     : [];
   // Fix #3: Determine QR status based on iftar date
   const getQRStatus = (r) => {
+    const key = getIftarKey(r);
     if (r.used) return { label: "Used", color: "red" };
-    if (r.iftarDateKey === todayKey) return { label: "Active Today", color: "green" };
-    if (r.iftarDateKey > todayKey) return { label: "Upcoming", color: "gold" };
+    if (key === todayKey) return { label: "Active Today", color: "green" };
+    if (key > todayKey) return { label: "Upcoming", color: "gold" };
     return { label: "Expired", color: "red" };
   };
   const navItems = [
@@ -482,7 +492,7 @@ function UserApp({ now, regs, setRegs, cfg, scr, strikes }) {
             {viewQR ? (
               (() => {
                 const qs = getQRStatus(viewQR);
-                const isActiveToday = viewQR.iftarDateKey === todayKey && !viewQR.used;
+                const isActiveToday = getIftarKey(viewQR) === todayKey && !viewQR.used;
                 return (
               <div style={{ maxWidth: "520px", margin: "0 auto" }}><button onClick={() => setViewQR(null)} style={{ ...BTN("out"), marginBottom: "14px", padding: "10px", fontSize: "12px" }}>← Back</button><div className="card" style={{ border: `1px solid ${qs.color === "green" ? P.ok + "40" : qs.color === "red" ? P.err + "40" : P.acc + "40"}`, textAlign: "center", padding: "32px" }}><div style={LBL}>Your Iftar Pass</div><div style={{ fontSize: "20px", fontWeight: "800", color: P.pri, margin: "8px 0 4px", fontFamily: "'Playfair Display'" }}>{viewQR.name}</div><div style={{ fontSize: "12px", color: P.acc, fontWeight: "600", marginBottom: "16px" }}>For: {viewQR.iftarDate || viewQR.date}</div>
                 {isActiveToday ? (viewQR.type === "guest" ? (<><div style={{ display: "inline-block", padding: "16px", background: "#fff", borderRadius: "16px", border: `2px solid ${P.ok}40` }}><QRCode value={viewQR.id} size={sm ? 240 : 200} /></div><div style={{ marginTop: "14px", fontSize: "13px", color: P.ok, background: "#dcfce7", padding: "14px", borderRadius: "10px", lineHeight: 1.5, fontWeight: "600" }}>✅ Active — Show this QR at the Iftar venue today</div></>) : (<><div style={{ padding: "24px", background: "#dcfce7", borderRadius: "16px", border: "2px solid #bbf7d0" }}><div style={{ fontSize: "32px", marginBottom: "8px" }}>📧</div><div style={{ fontSize: "15px", fontWeight: "700", color: "#166534" }}>Check Your Email</div><div style={{ fontSize: "13px", color: "#15803d", marginTop: "6px" }}>Your QR code was sent to</div><div style={{ fontSize: "14px", fontWeight: "700", color: "#166534", marginTop: "4px" }}>{viewQR.email}</div><div style={{ fontSize: "11px", color: "#4ade80", marginTop: "8px" }}>Show the QR from your email at the venue</div><div style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>📌 Not in inbox? Check your spam/junk folder</div></div></>)) : (<><div style={{ padding: "40px 20px", background: P.bg, borderRadius: "16px", border: `2px dashed ${P.bor}` }}><div style={{ fontSize: "48px", marginBottom: "8px", opacity: 0.4 }}>{qs.color === "red" ? "❌" : "⏳"}</div><div style={{ fontSize: "16px", fontWeight: "700", color: P.sub }}>{viewQR.used ? "Already Used" : qs.label === "Upcoming" ? "Not Active Yet" : "Expired"}</div><div style={{ fontSize: "12px", color: P.mut, marginTop: "6px" }}>{viewQR.used ? "This pass was already scanned." : qs.label === "Upcoming" ? `This pass activates on ${viewQR.iftarDate}.` : "This pass has expired."}</div></div></>)}
@@ -761,7 +771,8 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
   const validateScan = (reg) => {
     if (!reg) return { ok: false, msg: "QR code not found in system.", icon: "❌" };
     if (reg.used) return { ok: false, msg: `Already scanned! ${reg.name}`, icon: "⚠️" };
-    if (reg.iftarDateKey && reg.iftarDateKey !== scanTodayKey) return { ok: false, msg: `Wrong date! This pass is for ${reg.iftarDate || reg.iftarDateKey}, not today.`, sub: reg.name, icon: "📅" };
+    const regKey = getIftarKey(reg);
+    if (regKey && regKey !== scanTodayKey) return { ok: false, msg: `Wrong date! This pass is for ${reg.iftarDate || regKey}, not today.`, sub: reg.name, icon: "📅" };
     return { ok: true };
   };
 
@@ -888,7 +899,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
 
           {/* ── STRIKES ── */}
           {tab === "strikes" && (() => {
-            const noShows = regs.filter(r => r.iftarDateKey === scanTodayKey && !r.used);
+            const noShows = regs.filter(r => getIftarKey(r) === scanTodayKey && !r.used);
             const strikeList = Object.entries(strikes).filter(([, v]) => v.count > 0).sort((a, b) => b[1].count - a[1].count);
             const markNoShows = () => {
               if (noShows.length === 0) return showToast("No unscanned registrations for today.", "info");
@@ -905,7 +916,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
               });
               setStrikes(updated);
               // Mark them as no-show in regs for tracking
-              setRegs(regs.map(r => r.iftarDateKey === scanTodayKey && !r.used ? { ...r, noShow: true } : r));
+              setRegs(regs.map(r => getIftarKey(r) === scanTodayKey && !r.used ? { ...r, noShow: true } : r));
               showToast(`${noShows.length} no-show${noShows.length > 1 ? "s" : ""} recorded with strikes!`, "ok");
             };
             return (<div className="g2" style={{ alignItems: "start" }}>
