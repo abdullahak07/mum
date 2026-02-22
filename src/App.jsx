@@ -3,9 +3,10 @@ import {
   loadConfig, loadRegistrations, loadStrikes, saveConfig, saveRegistrations, saveStrikes,
   onConfigChange, onRegistrationsChange, onStrikesChange, factoryReset,
 } from "./firebase";
+import logo from "./logo.png";
 
 /* ═══ LINKS ═══ */
-const LOGO = "https://scontent.fper4-1.fna.fbcdn.net/v/t39.30808-6/327367986_486919260278139_3814823357749502909_n.jpg";
+const LOGO = logo;
 const WHATSAPP = "https://chat.whatsapp.com/LnsJ6ZJH5AoFCuJV1hbcE8";
 const FB = "https://www.facebook.com/MurdochUniMSA/";
 const YT = "https://youtube.com/@murdoch-2025";
@@ -127,6 +128,8 @@ const P = {
 
 /* ═══ Helpers ═══ */
 const PRAYER_ORDER = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"];
+/* Local date key — avoids UTC timezone bug (toISOString returns UTC, not Perth) */
+const localDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 /* Strike system: no-show penalties */
 const STRIKE_RULES = [
   { strikes: 1, action: "⚠️ Warning", blockDays: 0 },
@@ -325,8 +328,8 @@ function UserApp({ now, regs, setRegs, cfg, scr, strikes }) {
 
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
   const tmrStr = tomorrow.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  const tmrKey = tomorrow.toISOString().split("T")[0]; // "2026-02-22" — machine-readable for scanner
-  const todayKey = now.toISOString().split("T")[0];
+  const tmrKey = localDateKey(tomorrow); // "2026-02-22" — machine-readable for scanner
+  const todayKey = localDateKey(now);
 
   // Build full email from student ID
   const getStudentEmail = () => `${form.sid}@student.murdoch.edu.au`;
@@ -752,7 +755,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
   const todayR = regs.filter(r => r.date === today);
   const totS = regs.filter(r => r.used).length;
   const filtered = regs.filter(r => filter === "today" ? r.date === today : filter === "pending" ? !r.used : filter === "scanned" ? r.used : true);
-  const scanTodayKey = now.toISOString().split("T")[0]; // "2026-02-22"
+  const scanTodayKey = localDateKey(now); // "2026-02-22"
 
   // Fix #3: Scanner validates QR is for TODAY's iftar
   const validateScan = (reg) => {
@@ -795,7 +798,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
       email = `${mf.email}@student.murdoch.edu.au`;
     }
     const tmr = new Date(now); tmr.setDate(tmr.getDate() + 1);
-    const tmrKey = tmr.toISOString().split("T")[0];
+    const tmrKey = localDateKey(tmr);
     setRegs(p => [...p, { id: `MUMSA-${shortId}-${ts}`, name: mf.name, studentId: shortId, type: mf.type, email, phone, date: now.toDateString(), iftarDate: tmr.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }), iftarDateKey: tmrKey, time: now.toLocaleTimeString(), used: false }]);
     setMf({ name: "", email: "", phone: "", type: "student" }); showToast("Registration added!", "ok");
   };
@@ -895,7 +898,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
                 const prev = updated[key] || { count: 0, dates: [], name: r.name };
                 const newCount = prev.count + 1;
                 const blockDays = getStrikeBlock(newCount);
-                const blockedUntil = blockDays > 0 ? new Date(Date.now() + blockDays * 86400000).toISOString().split("T")[0] : null;
+                const blockedUntil = blockDays > 0 ? localDateKey(new Date(Date.now() + blockDays * 86400000)) : null;
                 updated[key] = { count: newCount, dates: [...(prev.dates || []), scanTodayKey], name: r.name, email: r.email || prev.email, blockedUntil };
                 // Send strike email to students
                 if (r.email) sendStrikeEmail(cfg, r.email, r.name, newCount, blockedUntil);
