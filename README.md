@@ -48,4 +48,4 @@ Push to GitHub or redeploy from Vercel. Emails will start working.
 - **Strikes**: No-shows tracked, repeat offenders blocked
 
 ## Admin Access
-Navigate to `/#admin` → Enter PIN (default: 1430)
+Navigate to `/#admin` → Enter PIN 
