@@ -46,8 +46,8 @@ async function sendStrikeEmail(cfg, email, name, strikeCount, blockedUntil) {
 function QRCode({ value, size = 200 }) {
   const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(value)}&size=${size}x${size}&margin=8&format=svg`;
   return (
-    <div style={{ width: size, height: size, background: "#fff", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-      <img src={url} alt="QR Code" width={size} height={size} style={{ display: "block" }} />
+    <div style={{ width: size, height: size, background: "#fff", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", colorScheme: "light" }}>
+      <img src={url} alt="QR Code" width={size} height={size} style={{ display: "block", filter: "none", mixBlendMode: "normal" }} />
     </div>
   );
 }
@@ -500,7 +500,7 @@ function UserApp({ now, regs, setRegs, cfg, scr, strikes }) {
                 const isActiveToday = getIftarKey(viewQR) === todayKey && !viewQR.used;
                 return (
               <div style={{ maxWidth: "520px", margin: "0 auto" }}><button onClick={() => setViewQR(null)} style={{ ...BTN("out"), marginBottom: "14px", padding: "10px", fontSize: "12px" }}>← Back</button><div className="card" style={{ border: `1px solid ${qs.color === "green" ? P.ok + "40" : qs.color === "red" ? P.err + "40" : P.acc + "40"}`, textAlign: "center", padding: "32px" }}><div style={LBL}>Your Iftar Pass</div><div style={{ fontSize: "20px", fontWeight: "800", color: P.pri, margin: "8px 0 4px", fontFamily: "'Playfair Display'" }}>{viewQR.name}</div><div style={{ fontSize: "12px", color: P.acc, fontWeight: "600", marginBottom: "16px" }}>For: {viewQR.iftarDate || viewQR.date}</div>
-                {isActiveToday ? (<><div style={{ display: "inline-block", padding: "16px", background: "#fff", borderRadius: "16px", border: `2px solid ${P.ok}40` }}><QRCode value={viewQR.id || "MUMSA"} size={sm ? 240 : 200} /></div><div style={{ marginTop: "14px", fontSize: "13px", color: P.ok, background: "#dcfce7", padding: "14px", borderRadius: "10px", lineHeight: 1.5, fontWeight: "600" }}>✅ Active — Show this QR at the Iftar venue today</div></>) : (<><div style={{ padding: "40px 20px", background: P.bg, borderRadius: "16px", border: `2px dashed ${P.bor}` }}><div style={{ fontSize: "48px", marginBottom: "8px", opacity: 0.4 }}>{qs.color === "red" ? "❌" : "⏳"}</div><div style={{ fontSize: "16px", fontWeight: "700", color: P.sub }}>{viewQR.used ? "Already Used" : qs.label === "Upcoming" ? "Not Active Yet" : "Expired"}</div><div style={{ fontSize: "12px", color: P.mut, marginTop: "6px" }}>{viewQR.used ? "This pass was already scanned." : qs.label === "Upcoming" ? `This pass activates on ${viewQR.iftarDate}.` : "This pass has expired."}</div></div></>)}
+                {isActiveToday ? (<><div style={{ display: "inline-block", padding: "16px", background: "#fff", borderRadius: "16px", border: `2px solid ${P.ok}40` }}><QRCode value={viewQR.id || "MUMSA"} size={sm ? 240 : 200} fgColor="#000000" bgColor="#FFFFFF" /></div><div style={{ marginTop: "14px", fontSize: "13px", color: P.ok, background: "#dcfce7", padding: "14px", borderRadius: "10px", lineHeight: 1.5, fontWeight: "600" }}>✅ Active — Show this QR at the Iftar venue today</div></>) : (<><div style={{ padding: "40px 20px", background: P.bg, borderRadius: "16px", border: `2px dashed ${P.bor}` }}><div style={{ fontSize: "48px", marginBottom: "8px", opacity: 0.4 }}>{qs.color === "red" ? "❌" : "⏳"}</div><div style={{ fontSize: "16px", fontWeight: "700", color: P.sub }}>{viewQR.used ? "Already Used" : qs.label === "Upcoming" ? "Not Active Yet" : "Expired"}</div><div style={{ fontSize: "12px", color: P.mut, marginTop: "6px" }}>{viewQR.used ? "This pass was already scanned." : qs.label === "Upcoming" ? `This pass activates on ${viewQR.iftarDate}.` : "This pass has expired."}</div></div></>)}
                 <div style={{ marginTop: "12px", display: "flex", justifyContent: "center", gap: "8px" }}><span style={BDG(qs.color)}>{qs.label}</span><span style={BDG("gold")}>{viewQR.type || "student"}</span></div></div></div>
                 );
                 } catch (err) {
@@ -510,7 +510,7 @@ function UserApp({ now, regs, setRegs, cfg, scr, strikes }) {
               })()
             ) : success ? (
               <div style={{ maxWidth: "520px", margin: "0 auto" }}><div className="card" style={{ border: `1px solid ${P.acc}40`, textAlign: "center", padding: "32px" }}><div style={{ fontSize: "48px", marginBottom: "8px" }}>✅</div><div style={{ fontSize: "24px", fontWeight: "800", color: P.pri, fontFamily: "'Playfair Display'", marginBottom: "4px" }}>You're Registered!</div><div style={{ fontSize: "14px", color: P.acc, fontWeight: "600", marginBottom: "4px" }}>For tomorrow's Iftar — {tmrStr}</div><div style={{ fontSize: "13px", color: P.sub, marginBottom: "18px" }}>{success.type === "guest" ? "Show QR at venue" : "Check your email for QR code"}</div>
-                {success.type === "guest" ? (<div style={{ display: "inline-block", padding: "16px", background: "#fff", borderRadius: "16px", border: `2px solid ${P.bor}` }}><QRCode value={success.id} size={sm ? 230 : 190} /></div>) : (<div style={{ padding: "24px", background: "#dcfce7", borderRadius: "16px", border: "2px solid #bbf7d0" }}><div style={{ fontSize: "32px", marginBottom: "8px" }}>📧</div><div style={{ fontSize: "15px", fontWeight: "700", color: "#166534" }}>QR Code Sent!</div><div style={{ fontSize: "13px", color: "#15803d", marginTop: "6px" }}>Check your inbox at</div><div style={{ fontSize: "14px", fontWeight: "700", color: "#166534", marginTop: "4px" }}>{success.email}</div><div style={{ fontSize: "11px", color: "#4ade80", marginTop: "8px" }}>Show the QR from your email at the venue</div><div style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>📌 Not in inbox? Check your spam/junk folder</div></div>)}
+                {success.type === "guest" ? (<div style={{ display: "inline-block", padding: "16px", background: "#fff", borderRadius: "16px", border: `2px solid ${P.bor}` }}><QRCode value={success.id} size={sm ? 230 : 190} fgColor="#000000" bgColor="#FFFFFF" /></div>) : (<div style={{ padding: "24px", background: "#dcfce7", borderRadius: "16px", border: "2px solid #bbf7d0" }}><div style={{ fontSize: "32px", marginBottom: "8px" }}>📧</div><div style={{ fontSize: "15px", fontWeight: "700", color: "#166534" }}>QR Code Sent!</div><div style={{ fontSize: "13px", color: "#15803d", marginTop: "6px" }}>Check your inbox at</div><div style={{ fontSize: "14px", fontWeight: "700", color: "#166534", marginTop: "4px" }}>{success.email}</div><div style={{ fontSize: "11px", color: "#4ade80", marginTop: "8px" }}>Show the QR from your email at the venue</div><div style={{ fontSize: "11px", color: "#999", marginTop: "6px" }}>📌 Not in inbox? Check your spam/junk folder</div></div>)}
                 <div style={{ marginTop: "14px" }}><div style={{ fontSize: "16px", fontWeight: "700", color: P.pri }}>{success.name}</div><div style={{ fontSize: "12px", color: P.sub }}>{success.type === "guest" ? `Guest · 📱 ${success.phone}` : `🎓 ${success.studentId}@student.murdoch.edu.au`} · {success.date}</div></div></div><div className="g2" style={{ marginTop: "12px" }}><button onClick={() => setSuccess(null)} style={BTN("pri")}>Done</button><a href={WHATSAPP} target="_blank" rel="noopener noreferrer" style={{ ...BTN("wa"), textDecoration: "none", display: "block", textAlign: "center" }}>💬 Get Reminder on WhatsApp</a></div></div>
             ) : (
               <div className="g2" style={{ alignItems: "start" }}>
@@ -686,15 +686,15 @@ function CameraScanner({ onScan, active }) {
     if (!result && window.jsQR) {
       try {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = window.jsQR(imgData.data, canvas.width, canvas.height, { inversionAttempts: "dontInvert" });
+        const code = window.jsQR(imgData.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
         if (code) result = code.data;
       } catch { /* jsQR failed */ }
     }
 
-    if (result && result.startsWith("MUMSA-") && result !== lastScan.current) {
-      lastScan.current = result;
+    if (result && result.trim().startsWith("MUMSA-") && result.trim() !== lastScan.current) {
+      lastScan.current = result.trim();
       stopCam();
-      onScan(result);
+      onScan(result.trim());
     }
   };
 
@@ -785,9 +785,12 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
     return { ok: true };
   };
 
+  const normalizeCode = (c) => { try { c = decodeURIComponent(c); } catch(e) {} return c.trim().replace(/\s+/g, ""); };
+
   const doScan = () => {
     if (!scanIn.trim()) return;
-    const reg = regs.find(r => r.id === scanIn.trim());
+    const code = normalizeCode(scanIn);
+    const reg = regs.find(r => r.id === code) || regs.find(r => normalizeCode(r.id) === code) || regs.find(r => code.includes(r.id) || r.id.includes(code));
     const v = validateScan(reg);
     if (!v.ok) { setScanRes(v); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
@@ -796,7 +799,8 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
   };
 
   const handleCamScan = (code) => {
-    const reg = regs.find(r => r.id === code);
+    const clean = normalizeCode(code);
+    const reg = regs.find(r => r.id === clean) || regs.find(r => normalizeCode(r.id) === clean) || regs.find(r => clean.includes(r.id) || r.id.includes(clean));
     const v = validateScan(reg);
     if (!v.ok) { setScanRes(v); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
@@ -830,7 +834,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
   const uD = (k, v) => setDraft(p => ({ ...p, donation: { ...p.donation, [k]: v } }));
 
   const tabs = [
-    { id: "scan", l: "🔍 Scanner" }, { id: "regs", l: "📋 Regs" }, { id: "add", l: "➕ Add" },
+    { id: "scan", l: "🔍 Scanner" }, { id: "regs", l: "📋 Regs" }, { id: "stats", l: "📊 Stats" }, { id: "add", l: "➕ Add" },
     { id: "strikes", l: "🚫 Strikes" },
     { id: "prayer", l: "🕌 Prayer" }, { id: "content", l: "📝 Content" },
     { id: "sponsors", l: "🏪 Sponsors" }, { id: "donate", l: "💝 Donate" },
@@ -904,6 +908,67 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
           </>)}
 
           {/* ── MANUAL ADD ── */}
+          {tab === "stats" && (() => {
+            // Group registrations by iftar date
+            const byDate = {};
+            regs.forEach(r => {
+              const key = getIftarKey(r) || r.date || "unknown";
+              if (!byDate[key]) byDate[key] = { date: key, display: r.iftarDate || key, total: 0, scanned: 0, noshow: 0, students: 0, guests: 0 };
+              byDate[key].total++;
+              if (r.used) byDate[key].scanned++;
+              else byDate[key].noshow++;
+              if (r.type === "guest") byDate[key].guests++; else byDate[key].students++;
+            });
+            const dates = Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date));
+            // Repeat offenders — people who registered 2+ times but never showed
+            const personMap = {};
+            regs.forEach(r => {
+              const key = r.email ? r.email.toLowerCase() : r.phone ? `phone:${r.phone}` : r.name.toLowerCase();
+              if (!personMap[key]) personMap[key] = { name: r.name, email: r.email, phone: r.phone, type: r.type, total: 0, attended: 0, noshows: 0, dates: [] };
+              personMap[key].total++;
+              if (r.used) personMap[key].attended++;
+              else { personMap[key].noshows++; personMap[key].dates.push(r.iftarDate || getIftarKey(r) || r.date); }
+            });
+            const offenders = Object.values(personMap).filter(p => p.noshows >= 2).sort((a, b) => b.noshows - a.noshows);
+            const totalAll = regs.length; const totalScanned = regs.filter(r => r.used).length; const rate = totalAll > 0 ? Math.round((totalScanned / totalAll) * 100) : 0;
+            return (<div>
+              <div style={DS}>Overall Stats</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+                <div style={{ ...DC, textAlign: "center", padding: "16px" }}><div style={{ fontSize: "28px", fontWeight: "800", color: P.acc }}>{totalAll}</div><div style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>Total Regs</div></div>
+                <div style={{ ...DC, textAlign: "center", padding: "16px" }}><div style={{ fontSize: "28px", fontWeight: "800", color: "#4ade80" }}>{totalScanned}</div><div style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>Attended</div></div>
+                <div style={{ ...DC, textAlign: "center", padding: "16px" }}><div style={{ fontSize: "28px", fontWeight: "800", color: rate >= 70 ? "#4ade80" : rate >= 50 ? "#f59e0b" : "#ef4444" }}>{rate}%</div><div style={{ fontSize: "11px", color: "#888", marginTop: "4px" }}>Show-up Rate</div></div>
+              </div>
+              <div style={DS}>Daily Breakdown</div>
+              <div style={{ ...DC, padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 60px 70px 70px 60px 60px", padding: "10px 14px", borderBottom: `1px solid ${dk.br}`, fontSize: "9px", fontWeight: "700", color: "#666", letterSpacing: "1px", textTransform: "uppercase" }}><div>Date</div><div style={{ textAlign: "center" }}>Total</div><div style={{ textAlign: "center" }}>Scanned</div><div style={{ textAlign: "center" }}>No-Show</div><div style={{ textAlign: "center" }}>Stud.</div><div style={{ textAlign: "center" }}>Guest</div></div>
+                <div style={{ maxHeight: "300px", overflowY: "auto" }}>{dates.map(d => {
+                  const showRate = d.total > 0 ? Math.round((d.scanned / d.total) * 100) : 0;
+                  return (<div key={d.date} style={{ display: "grid", gridTemplateColumns: "2fr 60px 70px 70px 60px 60px", padding: "10px 14px", borderBottom: `1px solid ${dk.br}20`, alignItems: "center" }}>
+                    <div><div style={{ fontWeight: "600", color: "#fff", fontSize: "13px" }}>{d.display}</div><div style={{ fontSize: "10px", color: "#666" }}>{d.date}</div></div>
+                    <div style={{ textAlign: "center", fontWeight: "700", color: "#ccc" }}>{d.total}</div>
+                    <div style={{ textAlign: "center" }}><span style={{ ...BDG("green"), fontSize: "10px" }}>{d.scanned}</span></div>
+                    <div style={{ textAlign: "center" }}><span style={{ ...BDG(d.noshow > 0 ? "red" : "green"), fontSize: "10px" }}>{d.noshow}</span></div>
+                    <div style={{ textAlign: "center", fontSize: "12px", color: "#888" }}>{d.students}</div>
+                    <div style={{ textAlign: "center", fontSize: "12px", color: "#888" }}>{d.guests}</div>
+                  </div>);
+                })}</div>
+              </div>
+              <div style={{ ...DS, marginTop: "20px" }}>🚨 Repeat No-Show Offenders ({offenders.length})</div>
+              {offenders.length === 0 ? <div style={{ ...DC, textAlign: "center", color: "#888", padding: "20px", fontSize: "13px" }}>No repeat offenders yet — great!</div> :
+              <div style={{ ...DC, padding: 0, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 60px 60px 60px", padding: "10px 14px", borderBottom: `1px solid ${dk.br}`, fontSize: "9px", fontWeight: "700", color: "#666", letterSpacing: "1px", textTransform: "uppercase" }}><div>Name</div><div>Contact</div><div style={{ textAlign: "center" }}>Regs</div><div style={{ textAlign: "center" }}>Came</div><div style={{ textAlign: "center" }}>Missed</div></div>
+                <div style={{ maxHeight: "300px", overflowY: "auto" }}>{offenders.map((p, i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 60px 60px 60px", padding: "10px 14px", borderBottom: `1px solid ${dk.br}20`, alignItems: "center", background: p.noshows >= 3 ? "#450a0a20" : "transparent" }}>
+                    <div style={{ fontWeight: "600", color: "#fff", fontSize: "13px" }}>{p.name}</div>
+                    <div style={{ fontSize: "11px", color: "#888", wordBreak: "break-all" }}>{p.email || (p.phone ? `📱 ${p.phone}` : p.type)}</div>
+                    <div style={{ textAlign: "center", fontSize: "12px", color: "#ccc" }}>{p.total}</div>
+                    <div style={{ textAlign: "center" }}><span style={{ ...BDG("green"), fontSize: "10px" }}>{p.attended}</span></div>
+                    <div style={{ textAlign: "center" }}><span style={{ ...BDG("red"), fontSize: "10px" }}>{p.noshows}</span></div>
+                  </div>
+                ))}</div>
+              </div>}
+            </div>);
+          })()}
           {tab === "add" && (<div className="g2" style={{ alignItems: "start" }}><div><div style={DS}>Manual Add (No Time Limit)</div><div style={DC}><div style={{ marginBottom: "12px" }}><label style={DL}>Name *</label><input style={DI} value={mf.name} onChange={e => setMf({ ...mf, name: e.target.value })} /></div><div style={{ marginBottom: "12px" }}><label style={DL}>Type</label><div style={{ display: "flex", gap: "8px" }}>{["student", "guest"].map(t => (<button key={t} onClick={() => setMf({ ...mf, type: t })} style={{ flex: 1, padding: "10px", borderRadius: "8px", border: `2px solid ${mf.type === t ? P.acc : dk.br}`, background: mf.type === t ? `${P.acc}15` : "transparent", color: mf.type === t ? P.acc : "#888", fontWeight: "700", fontSize: "12px", cursor: "pointer", textTransform: "capitalize" }}>{t === "student" ? "Student/Staff" : "Guest"}</button>))}</div></div>{mf.type !== "guest" ? <div style={{ marginBottom: "12px" }}><label style={DL}>Student ID (8 digits) *</label><div style={{ display: "flex", alignItems: "center", gap: "0" }}><input style={{ ...DI, borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: "none", flex: "0 0 100px" }} maxLength={8} value={mf.email} onChange={e => setMf({ ...mf, email: e.target.value.replace(/\D/g, "").slice(0, 8) })} /><div style={{ padding: "10px 8px", background: "#252830", border: `1px solid ${dk.br}`, borderTopRightRadius: "8px", borderBottomRightRadius: "8px", fontSize: "10px", color: "#666", whiteSpace: "nowrap" }}>@student.murdoch.edu.au</div></div></div> : <div style={{ marginBottom: "12px" }}><label style={DL}>Phone *</label><input type="tel" style={DI} value={mf.phone} onChange={e => setMf({ ...mf, phone: e.target.value })} /></div>}<button onClick={addReg} style={DB(P.acc)}>Add Registration</button></div></div><div><div style={DS}>Bulk Actions</div><div style={DC}><ConfirmBtn id="markAllToday" label="✓ Mark All Today Scanned" confirmLabel="✓ Yes, Mark All!" onConfirm={() => setRegs(regs.map(r => r.date === today && !r.used ? { ...r, used: true } : r))} style={{ ...DB("#15803d"), marginBottom: "8px" }} /><ConfirmBtn id="resetAllPending" label="↻ Reset All Pending" confirmLabel="↻ Yes, Reset!" onConfirm={() => setRegs(regs.map(r => ({ ...r, used: false })))} style={DB("#6b21a8")} /><button onClick={() => { let fixed = 0; const patched = regs.map(r => { if (r.iftarDateKey) return r; let key = ""; if (r.iftarDate) { const d = new Date(r.iftarDate + ", " + new Date().getFullYear()); if (!isNaN(d)) key = localDateKey(d); } if (!key && r.date) { const d = new Date(r.date); d.setDate(d.getDate() + 1); key = localDateKey(d); } if (key) { fixed++; return { ...r, iftarDateKey: key }; } return r; }); setRegs(patched); showToast(`🔧 Repaired ${fixed} registrations!`, "ok"); }} style={{ ...DB("#0ea5e9"), marginTop: "8px" }}>🔧 Repair Old Registrations (add missing dates)</button></div></div></div>)}
 
           {/* ── STRIKES ── */}
