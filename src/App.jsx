@@ -785,12 +785,10 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
     return { ok: true };
   };
 
-  const normalizeCode = (c) => { try { c = decodeURIComponent(c); } catch(e) {} return c.trim().replace(/\s+/g, ""); };
-
   const doScan = () => {
     if (!scanIn.trim()) return;
-    const code = normalizeCode(scanIn);
-    const reg = regs.find(r => r.id === code) || regs.find(r => normalizeCode(r.id) === code) || regs.find(r => code.includes(r.id) || r.id.includes(code));
+    const code = scanIn.trim();
+    const reg = regs.find(r => r.id === code) || regs.find(r => r.id.trim() === code) || regs.find(r => code.includes(r.id) || r.id.includes(code));
     const v = validateScan(reg);
     if (!v.ok) { setScanRes(v); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
@@ -799,8 +797,8 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
   };
 
   const handleCamScan = (code) => {
-    const clean = normalizeCode(code);
-    const reg = regs.find(r => r.id === clean) || regs.find(r => normalizeCode(r.id) === clean) || regs.find(r => clean.includes(r.id) || r.id.includes(clean));
+    const clean = code.trim();
+    const reg = regs.find(r => r.id === clean) || regs.find(r => r.id.trim() === clean) || regs.find(r => clean.includes(r.id) || r.id.includes(clean));
     const v = validateScan(reg);
     if (!v.ok) { setScanRes(v); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
