@@ -785,10 +785,36 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
     return { ok: true };
   };
 
+  const findReg = (code) => {
+    if (!code) return null;
+    const c = code.trim();
+    const cu = c.toUpperCase();
+    // Exact match
+    let r = regs.find(r => r.id === c);
+    if (r) return r;
+    // Case-insensitive
+    r = regs.find(r => r.id.toUpperCase() === cu);
+    if (r) return r;
+    // Trimmed match (invisible chars)
+    r = regs.find(r => r.id.trim().toUpperCase() === cu);
+    if (r) return r;
+    // Partial: scanned contains stored or stored contains scanned
+    r = regs.find(r => cu.includes(r.id.toUpperCase()) || r.id.toUpperCase().includes(cu));
+    if (r) return r;
+    // Extract student ID from MUMSA-XXXXXXXX-XXXXX format and match
+    const parts = c.split("-");
+    if (parts.length >= 2) {
+      const sid = parts[1];
+      r = regs.find(r => r.studentId === sid && getIftarKey(r) === scanTodayKey && !r.used);
+      if (r) return r;
+    }
+    return null;
+  };
+
   const doScan = () => {
     if (!scanIn.trim()) return;
     const code = scanIn.trim();
-    const reg = regs.find(r => r.id === code) || regs.find(r => r.id.trim() === code) || regs.find(r => code.includes(r.id) || r.id.includes(code));
+    const reg = findReg(code);
     const v = validateScan(reg);
     if (!v.ok) { setScanRes({ ...v, scanned: code }); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
@@ -798,7 +824,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
 
   const handleCamScan = (code) => {
     const clean = code.trim();
-    const reg = regs.find(r => r.id === clean) || regs.find(r => r.id.trim() === clean) || regs.find(r => clean.includes(r.id) || r.id.includes(clean));
+    const reg = findReg(clean);
     const v = validateScan(reg);
     if (!v.ok) { setScanRes({ ...v, scanned: clean }); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
