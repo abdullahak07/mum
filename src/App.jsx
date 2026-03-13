@@ -789,24 +789,19 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
     if (!code) return null;
     const c = code.trim();
     const cu = c.toUpperCase();
-    // Exact match
-    let r = regs.find(r => r.id === c);
-    if (r) return r;
-    // Case-insensitive
-    r = regs.find(r => r.id.toUpperCase() === cu);
-    if (r) return r;
-    // Trimmed match (invisible chars)
-    r = regs.find(r => r.id.trim().toUpperCase() === cu);
-    if (r) return r;
-    // Partial: scanned contains stored or stored contains scanned
-    r = regs.find(r => cu.includes(r.id.toUpperCase()) || r.id.toUpperCase().includes(cu));
-    if (r) return r;
-    // Extract student ID from MUMSA-XXXXXXXX-XXXXX format and match
+    let found = regs.find(x => x.id === c);
+    if (found) return found;
+    found = regs.find(x => x.id.toUpperCase() === cu);
+    if (found) return found;
+    found = regs.find(x => x.id.trim().toUpperCase() === cu);
+    if (found) return found;
+    found = regs.find(x => cu.includes(x.id.toUpperCase()) || x.id.toUpperCase().includes(cu));
+    if (found) return found;
     const parts = c.split("-");
     if (parts.length >= 2) {
       const sid = parts[1];
-      r = regs.find(r => r.studentId === sid && getIftarKey(r) === scanTodayKey && !r.used);
-      if (r) return r;
+      found = regs.find(x => x.studentId === sid && getIftarKey(x) === scanTodayKey && !x.used);
+      if (found) return found;
     }
     return null;
   };
