@@ -244,6 +244,7 @@ export default function App() {
   const [pinErr, setPinErr] = useState(false);
   const [now, setNow] = useState(new Date());
   const [regs, setRegsState] = useState([]);
+  console.log("[MUMSA] Regs loaded:", regs.length);
   const [cfg, setCfgState] = useState(DEF);
   const [strikes, setStrikesState] = useState({});
 
@@ -267,7 +268,7 @@ export default function App() {
         if (sr) setRegsState(sr);
         if (ss) setStrikesState(ss);
         u1 = onConfigChange((d) => setCfgState(prev => ({ ...DEF, ...d })));
-        u2 = onRegistrationsChange((l) => setRegsState(l));
+        u2 = onRegistrationsChange((l) => { console.log("[MUMSA] Firebase regs received:", l.length); setRegsState(l); });
         u3 = onStrikesChange((s) => setStrikesState(s));
       } catch (e) { console.error("Init:", e); }
     })();
@@ -723,6 +724,7 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
   const [scanIn, setScanIn] = useState("");
   const [scanRes, setScanRes] = useState(null);
   const [scanMode, setScanMode] = useState("manual"); // "manual" or "camera"
+  const [nameSearch, setNameSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [mf, setMf] = useState({ name: "", email: "", phone: "", type: "student" });
   const { sm, md, lg } = scr;
@@ -785,28 +787,50 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
     return { ok: true };
   };
 
-  const normalizeCode = (c) => { try { c = decodeURIComponent(c); } catch(e) {} return c.trim().replace(/\s+/g, ""); };
+  const findReg = (code) => {
+    if (!code) return null;
+    const c = code.trim();
+    const cu = c.toUpperCase();
+    let found = regs.find(x => x.id === c);
+    if (found) return found;
+    found = regs.find(x => x.id.toUpperCase() === cu);
+    if (found) return found;
+    found = regs.find(x => x.id.trim().toUpperCase() === cu);
+    if (found) return found;
+    found = regs.find(x => cu.includes(x.id.toUpperCase()) || x.id.toUpperCase().includes(cu));
+    if (found) return found;
+    const parts = c.split("-");
+    if (parts.length >= 2) {
+      const sid = parts[1];
+      found = regs.find(x => x.studentId === sid && getIftarKey(x) === scanTodayKey && !x.used);
+      if (found) return found;
+    }
+    return null;
+  };
 
   const doScan = () => {
     if (!scanIn.trim()) return;
-    const code = normalizeCode(scanIn);
-    const reg = regs.find(r => r.id === code) || regs.find(r => normalizeCode(r.id) === code) || regs.find(r => code.includes(r.id) || r.id.includes(code));
+    const code = scanIn.trim();
+    const reg = findReg(code);
     const v = validateScan(reg);
-    if (!v.ok) { setScanRes(v); }
+    if (!v.ok) { setScanRes({ ...v, scanned: code }); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
     setScanIn("");
-    setTimeout(() => setScanRes(null), 5000);
+    setTimeout(() => setScanRes(null), 8000);
   };
 
   const handleCamScan = (code) => {
-    const clean = normalizeCode(code);
-    const reg = regs.find(r => r.id === clean) || regs.find(r => normalizeCode(r.id) === clean) || regs.find(r => clean.includes(r.id) || r.id.includes(clean));
+    const clean = code.trim();
+    const reg = findReg(clean);
     const v = validateScan(reg);
-    if (!v.ok) { setScanRes(v); }
+    if (!v.ok) { setScanRes({ ...v, scanned: clean }); }
     else { setRegs(regs.map(r => r.id === reg.id ? { ...r, used: true, scannedAt: now.toLocaleTimeString() } : r)); setScanRes({ ok: true, msg: `Welcome ${reg.name}!`, sub: `${reg.studentId} · ${reg.type}`, icon: "✅" }); }
     setScanMode("manual");
-    setTimeout(() => setScanRes(null), 5000);
+    setTimeout(() => setScanRes(null), 8000);
   };
+
+  // Name search check-in (backup when QR fails)
+  const nameResults = nameSearch.length >= 2 ? regs.filter(r => r.name.toLowerCase().includes(nameSearch.toLowerCase()) && getIftarKey(r) === scanTodayKey) : [];
 
   const addReg = () => {
     if (!mf.name.trim()) return showToast("Name required.", "err");
@@ -896,7 +920,9 @@ function AdminApp({ now, regs, setRegs, cfg, setCfgState, scr, strikes, setStrik
               <div style={DC}><div style={{ fontSize: "13px", color: "#888", marginBottom: "10px" }}>Scan QR code with camera</div><CameraScanner onScan={handleCamScan} active={scanMode === "camera"} /></div>
             ) : (
               <div style={DC}><div style={{ fontSize: "13px", color: "#888", marginBottom: "10px" }}>Enter QR code to verify</div><input style={{ ...DI, fontSize: md ? "16px" : "14px" }} placeholder="MUMSA-XXXXXXXX-XXXXX" value={scanIn} onChange={e => setScanIn(e.target.value)} onKeyDown={e => e.key === "Enter" && doScan()} /><button onClick={doScan} style={{ ...DB(P.acc), marginTop: "10px" }}>Verify & Mark</button></div>
-            )}{scanRes && (<div style={{ ...DC, background: scanRes.ok ? "#052e16" : "#450a0a", border: `2px solid ${scanRes.ok ? P.ok : P.err}`, textAlign: "center" }}><div style={{ fontSize: "40px" }}>{scanRes.icon}</div><div style={{ fontSize: "18px", fontWeight: "700", color: scanRes.ok ? "#4ade80" : "#f87171", marginTop: "8px" }}>{scanRes.ok ? "VERIFIED" : "REJECTED"}</div><div style={{ fontSize: "14px", color: "#ccc", marginTop: "6px" }}>{scanRes.msg}</div>{scanRes.sub && <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>{scanRes.sub}</div>}<button onClick={() => { setScanRes(null); setScanMode("camera"); }} style={{ ...DB("#60a5fa"), marginTop: "12px", fontSize: "12px" }}>📷 Scan Next</button></div>)}</div><div><div style={DS}>Today ({todayR.length})</div>{todayR.length === 0 ? <div style={{ ...DC, textAlign: "center", color: "#555" }}>No registrations today.</div> : todayR.map(r => (<div key={r.id} style={{ ...DC, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px" }}><div><div style={{ fontSize: "14px", fontWeight: "700", color: "#fff" }}>{r.name}</div><div style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}>{r.studentId} · {r.type}</div></div><span style={{ ...BDG(r.used ? "green" : "gold"), fontSize: "9px" }}>{r.used ? "✓" : "Pending"}</span></div>))}</div></div>)}
+            )}{scanRes && (<div style={{ ...DC, background: scanRes.ok ? "#052e16" : "#450a0a", border: `2px solid ${scanRes.ok ? P.ok : P.err}`, textAlign: "center" }}><div style={{ fontSize: "40px" }}>{scanRes.icon}</div><div style={{ fontSize: "18px", fontWeight: "700", color: scanRes.ok ? "#4ade80" : "#f87171", marginTop: "8px" }}>{scanRes.ok ? "VERIFIED" : "REJECTED"}</div><div style={{ fontSize: "14px", color: "#ccc", marginTop: "6px" }}>{scanRes.msg}</div>{scanRes.sub && <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>{scanRes.sub}</div>}{!scanRes.ok && scanRes.scanned && <div style={{ marginTop: "8px", padding: "8px", background: "#1a1a2e", borderRadius: "6px", fontSize: "9px", color: "#f87171", fontFamily: "monospace", wordBreak: "break-all" }}>Scanned: {scanRes.scanned}</div>}<button onClick={() => { setScanRes(null); setScanMode("camera"); }} style={{ ...DB("#60a5fa"), marginTop: "12px", fontSize: "12px" }}>📷 Scan Next</button></div>)}
+            {/* Name Search Check-in (backup) */}
+            <div style={{ ...DC, marginTop: "12px" }}><div style={{ fontSize: "13px", color: "#888", marginBottom: "10px" }}>🔍 Quick Check-in by Name (if QR fails)</div><input style={{ ...DI, fontSize: md ? "16px" : "14px" }} placeholder="Type student name..." value={nameSearch} onChange={e => setNameSearch(e.target.value)} />{nameResults.length > 0 && <div style={{ marginTop: "8px" }}>{nameResults.map(r => (<div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderBottom: `1px solid ${dk.br}30` }}><div><div style={{ fontWeight: "600", color: "#fff", fontSize: "13px" }}>{r.name}</div><div style={{ fontSize: "10px", color: "#666" }}>{r.email || r.phone || r.studentId} · {r.type}</div></div>{r.used ? <span style={{ ...BDG("green"), fontSize: "10px" }}>✓ Done</span> : <button onClick={() => { setRegs(regs.map(x => x.id === r.id ? { ...x, used: true, scannedAt: now.toLocaleTimeString() } : x)); showToast(`✅ ${r.name} checked in!`, "ok"); setNameSearch(""); }} style={{ ...DB("#15803d", true), fontSize: "11px", padding: "6px 14px" }}>✓ Check In</button>}</div>))}</div>}{nameSearch.length >= 2 && nameResults.length === 0 && <div style={{ fontSize: "12px", color: "#666", marginTop: "8px", textAlign: "center" }}>No registrations found for today.</div>}</div></div><div><div style={DS}>Today ({todayR.length})</div>{todayR.length === 0 ? <div style={{ ...DC, textAlign: "center", color: "#555" }}>No registrations today.</div> : todayR.map(r => (<div key={r.id} style={{ ...DC, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px" }}><div><div style={{ fontSize: "14px", fontWeight: "700", color: "#fff" }}>{r.name}</div><div style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}>{r.studentId} · {r.type}</div></div><span style={{ ...BDG(r.used ? "green" : "gold"), fontSize: "9px" }}>{r.used ? "✓" : "Pending"}</span></div>))}</div></div>)}
 
           {/* ── REGISTRATIONS ── */}
           {tab === "regs" && (<>
